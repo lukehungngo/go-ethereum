@@ -18,6 +18,7 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"math/big"
 	"sort"
@@ -173,13 +174,13 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,
 
-	PriceLimit: 1,
+	PriceLimit: 0,
 	PriceBump:  10,
 
-	AccountSlots: 16,
-	GlobalSlots:  4096 + 1024, // urgent + floating queue capacity with 4:1 ratio
-	AccountQueue: 64,
-	GlobalQueue:  1024,
+	AccountSlots: 1600,
+	GlobalSlots:  409600 + 102400, // urgent + floating queue capacity with 4:1 ratio
+	AccountQueue: 6400,
+	GlobalQueue:  102400,
 
 	Lifetime: 3 * time.Hour,
 }
@@ -322,7 +323,9 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 			log.Warn("Failed to rotate transaction journal", "err", err)
 		}
 	}
-
+	log.Info(">>>>>>")
+	fmt.Println("Tx Pool, pool.gasPrice, config.PriceLimit ", pool.gasPrice.String(), config.PriceLimit)
+	log.Info(">>>>>>")
 	// Subscribe events from blockchain and start the main event loop.
 	pool.chainHeadSub = pool.chain.SubscribeChainHeadEvent(pool.chainHeadCh)
 	pool.wg.Add(1)
