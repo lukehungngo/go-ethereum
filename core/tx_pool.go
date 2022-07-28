@@ -623,6 +623,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	}
 	// Drop non-local transactions under our own minimal accepted gas price or tip
 	if !local && tx.GasTipCapIntCmp(pool.gasPrice) < 0 {
+		log.Warn("ErrUnderpriced", "Type=", tx.Type(), " gasTip=", tx.GasTipCap(), " gasPrice=", tx.GasPrice(), " poolGasPrice=", pool.gasPrice)
 		return ErrUnderpriced
 	}
 	// Ensure the transaction adheres to nonce ordering
@@ -676,6 +677,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		if !isLocal && pool.priced.Underpriced(tx) {
 			log.Trace("Discarding underpriced transaction", "hash", hash, "gasTipCap", tx.GasTipCap(), "gasFeeCap", tx.GasFeeCap())
 			underpricedTxMeter.Mark(1)
+			log.Warn("Pool is full and ErrUnderpriced", "Type=", tx.Type(), " gasTip=", tx.GasTipCap(), " gasPrice=", tx.GasPrice(), " poolGasPrice=", pool.gasPrice)
 			return false, ErrUnderpriced
 		}
 		// We're about to replace a transaction. The reorg does a more thorough
