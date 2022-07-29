@@ -300,11 +300,13 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		reorgDoneCh:     make(chan chan struct{}),
 		reorgShutdownCh: make(chan struct{}),
 		initDoneCh:      make(chan struct{}),
-		gasPrice:        new(big.Int).SetUint64(config.PriceLimit),
+		//@VED: START
+		gasPrice: new(big.Int).SetUint64(0),
+		//END
 	}
-	//@VED: START
+	//[VED] START
 	fmt.Printf("[VED] pool.gasPrice=%+v, config.PriceLimit=%+v \n", pool.gasPrice, config.PriceLimit)
-	//END
+	//[VED] END
 
 	pool.locals = newAccountSet(pool.signer)
 	for _, addr := range config.Locals {
@@ -629,9 +631,11 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		return ErrInvalidSender
 	}
 	// Drop non-local transactions under our own minimal accepted gas price or tip
-	if !local && tx.GasTipCapIntCmp(pool.gasPrice) < 0 {
-		return ErrUnderpriced
-	}
+	//[VED] START
+	//if !local && tx.GasTipCapIntCmp(pool.gasPrice) < 0 {
+	//	return ErrUnderpriced
+	//}
+	//[VED] END
 	// Ensure the transaction adheres to nonce ordering
 	if pool.currentState.GetNonce(from) > tx.Nonce() {
 		return ErrNonceTooLow
@@ -673,18 +677,20 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 
 	// If the transaction fails basic validation, discard it
 	if err := pool.validateTx(tx, isLocal); err != nil {
-		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		log.Info("Discarding invalid transaction", "hash", hash, "err", err)
 		invalidTxMeter.Mark(1)
 		return false, err
 	}
 	// If the transaction pool is full, discard underpriced transactions
 	if uint64(pool.all.Slots()+numSlots(tx)) > pool.config.GlobalSlots+pool.config.GlobalQueue {
 		// If the new transaction is underpriced, don't accept it
-		if !isLocal && pool.priced.Underpriced(tx) {
-			log.Trace("Discarding underpriced transaction", "hash", hash, "gasTipCap", tx.GasTipCap(), "gasFeeCap", tx.GasFeeCap())
-			underpricedTxMeter.Mark(1)
-			return false, ErrUnderpriced
-		}
+		//[VED] START
+		//if !isLocal && pool.priced.Underpriced(tx) {
+		//	log.Trace("Discarding underpriced transaction", "hash", hash, "gasTipCap", tx.GasTipCap(), "gasFeeCap", tx.GasFeeCap())
+		//	underpricedTxMeter.Mark(1)
+		//	return false, ErrUnderpriced
+		//}
+		//[VED] END
 		// We're about to replace a transaction. The reorg does a more thorough
 		// analysis of what to remove and how, but it runs async. We don't want to
 		// do too many replacements between reorg-runs, so we cap the number of
