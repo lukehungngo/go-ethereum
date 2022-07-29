@@ -451,6 +451,9 @@ func (pool *TxPool) GasPrice() *big.Int {
 // SetGasPrice updates the minimum price required by the transaction pool for a
 // new transaction, and drops all transactions below this threshold.
 func (pool *TxPool) SetGasPrice(price *big.Int) {
+	//[VED] START do not allow to re-setGasPrice
+	return
+	//[VED] END
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
@@ -691,6 +694,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		//	return false, ErrUnderpriced
 		//}
 		//[VED] END
+		fmt.Println("By pass check Underprice add")
 		// We're about to replace a transaction. The reorg does a more thorough
 		// analysis of what to remove and how, but it runs async. We don't want to
 		// do too many replacements between reorg-runs, so we cap the number of
